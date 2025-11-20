@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
 Test set: Proyect.MueblesDelgadoApplicationTests
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.048 s <<< FAILURE! -- in Proyect.MueblesDelgadoApplicationTests
-Proyect.MueblesDelgadoApplicationTests.initializationError -- Time elapsed: 0.004 s <<< ERROR!
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.464 s <<< FAILURE! -- in Proyect.MueblesDelgadoApplicationTests
+Proyect.MueblesDelgadoApplicationTests.initializationError -- Time elapsed: 0.032 s <<< ERROR!
 org.junit.runners.model.InvalidTestClassError: 
 Invalid test class 'Proyect.MueblesDelgadoApplicationTests':
   1. The class Proyect.MueblesDelgadoApplicationTests is not public.

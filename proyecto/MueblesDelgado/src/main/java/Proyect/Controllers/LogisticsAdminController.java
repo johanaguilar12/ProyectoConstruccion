@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -23,13 +24,14 @@ public class LogisticsAdminController {
 
     // Endpoint para planificar rutas
     @PostMapping("/planRoutes")
-    public ResponseEntity<List<Route>> planRoutes(@RequestBody List<Order> orders) {
+    public ResponseEntity<?> planRoutes(@RequestBody List<Order> orders) { // Cambia <List<Route>> por <?>
         try {
-            // Planificar rutas para las órdenes recibidas
             List<Route> plannedRoutes = logisticsAdminService.planRoutes(orders);
-            return ResponseEntity.ok(plannedRoutes);  // Responde con las rutas planificadas
+            return ResponseEntity.ok(plannedRoutes);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(null);  // Responde con un error 400 si ocurre una excepción
+            e.printStackTrace(); // Esto imprimirá el error completo en la consola de Java
+            // Devuelve el mensaje de la excepción al frontend
+            return ResponseEntity.badRequest().body(Collections.singletonMap("error", e.getMessage()));
         }
     }
 
