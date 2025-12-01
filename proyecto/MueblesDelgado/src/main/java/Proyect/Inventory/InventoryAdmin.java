@@ -20,8 +20,8 @@ public class InventoryAdmin {
 
     public void addFurnitureItemsToInventory(PackingList p_packingList) {
         packingListRepository.save(p_packingList);
-        ArrayList<Furniture> productsToAdd = p_packingList.getProducts();
-        ValidationUtils.validatesArrayList(productsToAdd, "Products");
+        List<Furniture> productsToAdd = p_packingList.getProducts();
+        ValidationUtils.validatesList(productsToAdd, "Products");
         furnitureRepository.saveAll(productsToAdd);
         System.out.println("Added " + productsToAdd.size() + " items to the inventory.");
     }
@@ -31,16 +31,16 @@ public class InventoryAdmin {
     }
 
     public void removeFurnitureItemsFromInventory(PackingList p_packingList) {
-        ArrayList<Furniture> productsToRemove = p_packingList.getProducts();
-        ValidationUtils.validatesArrayList(productsToRemove, "Products");
+        List<Furniture> productsToRemove = p_packingList.getProducts();
+        ValidationUtils.validatesList(productsToRemove, "Products");
         furnitureRepository.deleteAll(productsToRemove);
         System.out.println("Removed " + productsToRemove.size() + " items from the inventory.");
 
     }
 
     public void updateFurnitureItemsInInventory(PackingList p_packingList) {
-        ArrayList<Furniture> productsToUpdate = p_packingList.getProducts();
-        ValidationUtils.validatesArrayList(productsToUpdate, "Products");
+        List<Furniture> productsToUpdate = p_packingList.getProducts();
+        ValidationUtils.validatesList(productsToUpdate, "Products");
 
         for (Furniture furniture : productsToUpdate) {
             updateFurnitureItemInInventory(furniture);
@@ -54,4 +54,9 @@ public class InventoryAdmin {
         furnitureRepository.save(p_furniture);
         System.out.println("Updated furniture with ID: " + p_furniture.getFurnitureId());
     }
+
+    public List<PackingList> getAllPackingLists() {
+        return packingListRepository.findAll();
+    }
+
 }

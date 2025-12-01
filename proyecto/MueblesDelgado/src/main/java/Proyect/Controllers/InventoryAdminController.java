@@ -41,4 +41,10 @@ public class InventoryAdminController {
         return new ResponseEntity<>(furnitureList, HttpStatus.OK);
     }
 
+    @GetMapping("/getpackinglist")
+    public ResponseEntity<List<PackingList>> getAllPackingLists() {
+        List<PackingList> lists = inventoryAdminService.getAllPackingLists();
+        return new ResponseEntity<>(lists, HttpStatus.OK);
+    }
+
 }

@@ -1,117 +1,121 @@
 package Proyect.StoreKeeper;
 
-import java.util.ArrayList;
-import java.util.Date;
 import Proyect.Inventory.Furniture;
+import Proyect.Logistics.Route;
 import Proyect.Validations.ValidationUtils;
 import jakarta.persistence.*;
 import java.time.Duration;
+import java.time.LocalDate; // Recomendado usar LocalDate en lugar de Date
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
-@Table(name = "orders")  // Cambiar "order" a "orders" para evitar conflictos con SQL
+@Table(name = "orders")
 public class Order {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int orderID = 0;
-    private String destination = null;
+    private int orderID;
 
-    // Relación con Platform comentada por ahora
-    /*
+    private String destination;
+
+    // Cambiado a LocalDate para evitar problemas de zonas horarias y formato
+    private LocalDate deliveryDate;
+
+    // --- RELACIÓN CORREGIDA ---
+    // mappedBy = "order" refiere al atributo 'private Order order' en Furniture
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private ArrayList<Platform> platformUsed = new ArrayList<>();
-    */
+    private List<Furniture> orderContent = new ArrayList<>();
 
-    @Temporal(TemporalType.DATE)
-    private Date deliveryDate = new Date();
-
-    private ArrayList<Furniture> orderContent = new ArrayList<>();
     private Duration totalAssemblyTime = Duration.ZERO;
+
+    @ManyToOne
+    @JoinColumn(name = "route_id", nullable = true)
+    private Route route;
 
     public Order() {
     }
 
-    public Order(int p_orderID, String  p_destination, Date  p_deliveryDate, ArrayList<Furniture>  p_orderContent) { //ArrayList<Platform> p_platformUsed
-        setOrderID(p_orderID);
+    public Order(String p_destination, LocalDate p_deliveryDate) {
         setDestination(p_destination);
         setDeliveryDate(p_deliveryDate);
-        setOrderContent(p_orderContent);
-        calculateAssemblyTime();
     }
 
-    private void calculateAssemblyTime() {
-        Duration totalAssemblyTime = Duration.ZERO;
-        for (Furniture furniture : orderContent) {
-            totalAssemblyTime = totalAssemblyTime.plus(calculateFurnitureBuildTime(furniture));
+    // Calcula el tiempo total basándose en los muebles actuales
+    public void calculateAssemblyTime() {
+        long totalMinutes = 0;
+        if (orderContent != null) {
+            for (Furniture furniture : orderContent) {
+                totalMinutes += (long) furniture.getBuildTime() * furniture.getQuantity();
+            }
         }
-        setTotalAssemblyTime(totalAssemblyTime);
+        this.totalAssemblyTime = Duration.ofMinutes(totalMinutes);
     }
 
-    private Duration calculateFurnitureBuildTime(Furniture  p_furniture) {
-        int buildTimeMinutes =  p_furniture.getBuildTime() *  p_furniture.getQuantity();
-        return Duration.ofMinutes(buildTimeMinutes);
-    }
-
-    // Comentado temporalmente
-    /*
-    public void addPlatformUsed(Platform p_platform) {
-        platformUsed.add(p_platform);
-    }
-    */
-
-    public Duration getTotalAssemblyTime() {
-        return totalAssemblyTime;
-    }
-
-    public void setTotalAssemblyTime(Duration p_assemblyTime){
-        ValidationUtils.validateNonNull(p_assemblyTime, "Assembly Time");
-        this.totalAssemblyTime = p_assemblyTime;
-    }
+    // --- GETTERS Y SETTERS ---
 
     public int getOrderID() {
         return orderID;
     }
 
-    public void setOrderID(int p_orderID) {
-        ValidationUtils.validateGreaterThanZero(p_orderID, "Order ID");
-        this.orderID =  p_orderID;
+    public void setOrderID(int orderID) {
+        this.orderID = orderID;
     }
 
     public String getDestination() {
         return destination;
     }
 
-    public void setDestination(String  p_destination) {
+    public void setDestination(String p_destination) {
         ValidationUtils.validateNonNull(p_destination, "Destination");
-        this.destination =  p_destination;
+        this.destination = p_destination;
     }
 
-    // Relación con Platform comentada temporalmente
-    /*
-    public ArrayList<Platform> getPlatformUsed() {
-        return platformUsed;
-    }
-
-    public void setPlatformUsed(ArrayList<Platform>  p_platformUsed) {
-        ValidationUtils.validatesArrayList(p_platformUsed, "Platform Used");
-        this.platformUsed =  p_platformUsed;
-    }
-    */
-
-    public Date getDeliveryDate() {
+    public LocalDate getDeliveryDate() {
         return deliveryDate;
     }
 
-    public void setDeliveryDate(Date  p_deliveryDate) {
+    public void setDeliveryDate(LocalDate p_deliveryDate) {
         ValidationUtils.validateNonNull(p_deliveryDate, "Delivery Date");
-        this.deliveryDate =  p_deliveryDate;
+        this.deliveryDate = p_deliveryDate;
     }
 
-    public ArrayList<Furniture> getOrderContent() {
+    public List<Furniture> getOrderContent() {
         return orderContent;
     }
 
-    public void setOrderContent(ArrayList<Furniture>  p_orderContent) {
-        ValidationUtils.validateNonNull(p_orderContent, "Order Content");
-        this.orderContent =  p_orderContent;
+    public void setOrderContent(List<Furniture> p_orderContent) {
+        this.orderContent = p_orderContent;
+        // VINCULACIÓN IMPORTANTE: Asignar esta orden a cada mueble
+        if (this.orderContent != null) {
+            for (Furniture f : this.orderContent) {
+                f.setOrder(this);
+            }
+            calculateAssemblyTime(); // Recalcular tiempo al setear contenido
+        }
+    }
+
+    // Método helper para agregar un solo mueble
+    public void addFurniture(Furniture furniture) {
+        if (orderContent == null) orderContent = new ArrayList<>();
+        orderContent.add(furniture);
+        furniture.setOrder(this);
+        calculateAssemblyTime();
+    }
+
+    public Duration getTotalAssemblyTime() {
+        return totalAssemblyTime;
+    }
+
+    public void setTotalAssemblyTime(Duration totalAssemblyTime) {
+        this.totalAssemblyTime = totalAssemblyTime;
+    }
+
+    public Route getRoute() {
+        return route;
+    }
+
+    public void setRoute(Route route) {
+        this.route = route;
     }
 }
