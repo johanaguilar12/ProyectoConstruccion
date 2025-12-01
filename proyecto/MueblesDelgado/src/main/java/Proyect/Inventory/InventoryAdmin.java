@@ -2,10 +2,14 @@ package Proyect.Inventory;
 
 import Proyect.Repositories.FurnitureRepository;
 import Proyect.Repositories.PackingListRepository;
+import Proyect.Repositories.OrderRepository;
+import Proyect.StoreKeeper.Order;
 import Proyect.Validations.ValidationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -17,43 +21,58 @@ public class InventoryAdmin {
     @Autowired
     private PackingListRepository packingListRepository;
 
-    public void addFurnitureToInventory(PackingList p_packingList) {
+    @Autowired
+    private OrderRepository orderRepository; // Necesario para buscar/crear órdenes
+
+    public List<PackingList> getAllPackingLists() {
+        return packingListRepository.findAll();
+    }
+
+    @Transactional
+    public void addFurnitureItemsToInventory(PackingList p_packingList) {
+        ValidationUtils.validateNonNull(p_packingList, "Packing List");
+
+        // Lógica vital: Vincular muebles con órdenes
+        if (p_packingList.getProducts() != null) {
+            for (Furniture f : p_packingList.getProducts()) {
+                // Leemos el ID que mandó el JSON
+                Integer targetId = f.getTempOrderID();
+
+                if (targetId != null && targetId > 0) {
+                    // Buscamos la orden o creamos una básica si no existe
+                    Order order = orderRepository.findById(targetId)
+                            .orElseGet(() -> {
+                                Order newOrder = new Order();
+                                newOrder.setDestination("Destino pendiente");
+                                newOrder.setDeliveryDate(LocalDate.now().plusDays(7)); // Fecha default
+                                return orderRepository.save(newOrder);
+                            });
+
+                    // Vinculamos el mueble a esa orden
+                    f.setOrder(order);
+                }
+            }
+        }
+
+        // Guardar el PackingList (guarda los muebles en cascada)
         packingListRepository.save(p_packingList);
-        List<Furniture> productsToAdd = p_packingList.getProducts();
-        ValidationUtils.validatesList(productsToAdd, "Products");
-        furnitureRepository.saveAll(productsToAdd);
-        System.out.println("Added " + productsToAdd.size() + " items to the inventory.");
+    }
+
+    public void removeFurnitureItemsFromInventory(PackingList p_packingList) {
+        ValidationUtils.validateNonNull(p_packingList, "Packing List");
+        if(packingListRepository.existsById(p_packingList.getFolio())){
+            packingListRepository.delete(p_packingList);
+        }
+    }
+
+    public void updateFurnitureItemsInInventory(PackingList p_packingList) {
+        ValidationUtils.validateNonNull(p_packingList, "Packing List");
+        if(packingListRepository.existsById(p_packingList.getFolio())){
+            packingListRepository.save(p_packingList);
+        }
     }
 
     public List<Furniture> retrieveAllFurnitureFromInventory() {
         return furnitureRepository.findAll();
-    }
-
-    public List<PackingList> getPackingList() {
-        return packingListRepository.findAll();
-    }
-
-    public void removeFurnitureFromInventory(PackingList p_packingList) {
-        List<Furniture> productsToRemove = p_packingList.getProducts();
-        ValidationUtils.validatesList(productsToRemove, "Products");
-        furnitureRepository.deleteAll(productsToRemove);
-        System.out.println("Removed " + productsToRemove.size() + " items from the inventory.");
-
-    }
-
-    public void updateFurnitureInInventory(PackingList p_packingList) {
-        List<Furniture> productsToUpdate = p_packingList.getProducts();
-
-        for (Furniture furniture : productsToUpdate) {
-            updateFurnitureItem(furniture);
-        }
-        packingListRepository.save(p_packingList);
-        System.out.println("Updated inventory with " + productsToUpdate.size() + " items.");
-
-    }
-
-    private void updateFurnitureItem(Furniture p_furniture) {
-        furnitureRepository.save(p_furniture);
-        System.out.println("Updated furniture with ID: " + p_furniture.getFurnitureId());
     }
 }

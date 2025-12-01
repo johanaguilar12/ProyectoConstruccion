@@ -19,19 +19,22 @@ public class InventoryAdminController {
 
     @PostMapping("/add_furniture")
     public ResponseEntity<Void> addFurniture(@RequestBody PackingList packingList) {
-        inventoryAdminService.addFurnitureToInventory(packingList);
+        // CORREGIDO: Usar el nombre correcto del método en el servicio
+        inventoryAdminService.addFurnitureItemsToInventory(packingList);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     @PostMapping("/remove_furniture")
     public ResponseEntity<Void> removeFurniture(@RequestBody PackingList packingList) {
-        inventoryAdminService.removeFurnitureFromInventory(packingList);
+        // CORREGIDO: Usar el nombre correcto del método en el servicio
+        inventoryAdminService.removeFurnitureItemsFromInventory(packingList);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PutMapping("/update_furniture")
     public ResponseEntity<Void> updateFurniture(@RequestBody PackingList packingList) {
-        inventoryAdminService.updateFurnitureInInventory(packingList);
+        // CORREGIDO: Usar el nombre correcto del método en el servicio
+        inventoryAdminService.updateFurnitureItemsInInventory(packingList);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
@@ -43,8 +46,8 @@ public class InventoryAdminController {
 
     @GetMapping("/getpackinglist")
     public ResponseEntity<List<PackingList>> getAllPackingList() {
-        List<PackingList> packingLists = inventoryAdminService.getPackingList();
+        // CORREGIDO: El método en el servicio se llama getAllPackingLists
+        List<PackingList> packingLists = inventoryAdminService.getAllPackingLists();
         return new ResponseEntity<>(packingLists, HttpStatus.OK);
     }
-
 }

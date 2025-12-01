@@ -1,30 +1,42 @@
 package Proyect.Inventory;
 
+import Proyect.StoreKeeper.Order;
 import Proyect.Validations.ValidationUtils;
-
-import jakarta.persistence.Embedded;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
 
 @Entity
-public class Furniture{
+public class Furniture {
 
     @Id
-    private int furnitureId = 0;
-    private String type = null;
-    private String brand = null;
-    private String color = null;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int furnitureId;
+
+    private String type;
+    private String brand;
+    private String color;
 
     @Embedded
     private Dimension dimension = new Dimension(1f, 1f, 1f);
-    private int quantity = 0;
-    private int buildTime = 0;
-    private int orderID = 0;
 
+    private int quantity;
+    private int buildTime;
 
-    public Furniture(int p_furnitureId, int p_orderID, String p_type, String p_brand, String p_color, Dimension p_dimension, int p_quantity, int p_buildTime) {
+    // --- RELACIÓN CON LA ORDEN ---
+    @ManyToOne
+    @JoinColumn(name = "order_id") // Esto crea la columna real en la BD
+    @JsonIgnore // Evita bucles infinitos al convertir a JSON
+    private Order order;
+
+    // --- CAMPO TEMPORAL ---
+    // Esto sirve para recibir el "orderID" simple que manda el Frontend
+    @Transient
+    private Integer tempOrderID;
+
+    public Furniture() {}
+
+    public Furniture(int p_furnitureId, String p_type, String p_brand, String p_color, Dimension p_dimension, int p_quantity, int p_buildTime) {
         setFurnitureId(p_furnitureId);
-        setOrderID(p_orderID);
         setType(p_type);
         setBrand(p_brand);
         setColor(p_color);
@@ -33,85 +45,43 @@ public class Furniture{
         setBuildTime(p_buildTime);
     }
 
-    public Furniture(){}
+    // --- MÉTODOS PARA MANEJAR EL ID DEL JSON ---
 
-    public int getFurnitureId() {
-        return furnitureId;
+    // Jackson usa esto cuando recibe el JSON {"orderID": 5}
+    public void setOrderID(int id) {
+        this.tempOrderID = id;
     }
 
+    // Jackson usa esto para enviar el JSON al frontend
     public int getOrderID() {
-        return orderID;
+        if (order != null) {
+            return order.getOrderID();
+        }
+        return (tempOrderID != null) ? tempOrderID : 0;
     }
 
-    public void setOrderID(int p_orderID) {
-        ValidationUtils.validateGreaterThanZero(p_orderID, "Order ID");
-        this.orderID = p_orderID;
+    // Método para uso interno en el servicio
+    public Integer getTempOrderID() {
+        return tempOrderID;
     }
 
-    public void setFurnitureId(int p_furnitureId) {
-        ValidationUtils.validateGreaterThanZero(p_furnitureId, "Furniture ID");
-        this.furnitureId = p_furnitureId;
-    }
+    // Getters y Setters de la relación real
+    public Order getOrder() { return order; }
+    public void setOrder(Order order) { this.order = order; }
 
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String p_type) {
-        ValidationUtils.validateNonNull(p_type, "Type");
-        this.type = p_type;
-    }
-
-    public String getBrand() {
-        return brand;
-    }
-
-    public void setBrand(String p_brand) {
-        ValidationUtils.validateNonNull(p_brand, "Brand");
-        this.brand = p_brand;
-    }
-
-    public String getColor() {
-        return color;
-    }
-
-    public void setColor(String p_color) {
-        ValidationUtils.validateNonNull(p_color, "Color");
-        this.color = p_color;
-    }
-
-    public Dimension getDimension() {
-        return dimension;
-    }
-
-    public void setDimension(Dimension p_dimension) {
-        ValidationUtils.validateNonNull(p_dimension, "Dimension");
-        this.dimension = p_dimension;
-    }
-
-    public int getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(int p_quantity) {
-        ValidationUtils.validateNonNegativeNumber(p_quantity, "Quantity");
-        this.quantity = p_quantity;
-    }
-
-    public int getBuildTime() {
-        return buildTime;
-    }
-
-    public void setBuildTime(int p_buildTime) {
-        ValidationUtils.validateGreaterThanZero(p_buildTime, "Build Time");
-        this.buildTime = p_buildTime;
-    }
-
-    @Override
-    public boolean equals(Object p_object) {
-        if (!(p_object instanceof Furniture furniture))
-            return false;
-        return furnitureId == furniture.furnitureId;
-    }
-
+    // --- RESTO DE GETTERS Y SETTERS ---
+    public int getFurnitureId() { return furnitureId; }
+    public void setFurnitureId(int furnitureId) { this.furnitureId = furnitureId; }
+    public String getType() { return type; }
+    public void setType(String type) { ValidationUtils.validateNonNull(type, "Type"); this.type = type; }
+    public String getBrand() { return brand; }
+    public void setBrand(String brand) { ValidationUtils.validateNonNull(brand, "Brand"); this.brand = brand; }
+    public String getColor() { return color; }
+    public void setColor(String color) { ValidationUtils.validateNonNull(color, "Color"); this.color = color; }
+    public Dimension getDimension() { return dimension; }
+    public void setDimension(Dimension dimension) { ValidationUtils.validateNonNull(dimension, "Dimension"); this.dimension = dimension; }
+    public int getQuantity() { return quantity; }
+    public void setQuantity(int quantity) { ValidationUtils.validateNonNegativeNumber(quantity, "Quantity"); this.quantity = quantity; }
+    public int getBuildTime() { return buildTime; }
+    public void setBuildTime(int buildTime) { ValidationUtils.validateGreaterThanZero(buildTime, "Build Time"); this.buildTime = buildTime; }
 }

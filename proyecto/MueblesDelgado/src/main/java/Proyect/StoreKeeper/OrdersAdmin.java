@@ -1,9 +1,11 @@
 package Proyect.StoreKeeper;
 
+import Proyect.Inventory.Furniture;
 import Proyect.Repositories.OrderRepository;
 import Proyect.Validations.ValidationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -26,12 +28,29 @@ public class OrdersAdmin {
         return orderRepository.findAll();
     }
 
+    @Transactional
     public Order addOrder(Order p_order) {
         ValidationUtils.validateNonNull(p_order, "Order");
+
+        // Vinculación manual obligatoria antes de guardar
+        if (p_order.getOrderContent() != null) {
+            for (Furniture f : p_order.getOrderContent()) {
+                f.setOrder(p_order);
+            }
+            p_order.calculateAssemblyTime();
+        }
+
         return orderRepository.save(p_order);
     }
 
     public void setOrders(List<Order> p_orders) {
+        for(Order order : p_orders) {
+            if (order.getOrderContent() != null) {
+                for (Furniture f : order.getOrderContent()) {
+                    f.setOrder(order);
+                }
+            }
+        }
         orderRepository.saveAll(p_orders);
     }
 
@@ -43,10 +62,21 @@ public class OrdersAdmin {
         }
     }
 
+    @Transactional
     public Order updateOrder(Order p_order) {
         ValidationUtils.validateNonNull(p_order, "Order");
-        orderRepository.findById(p_order.getOrderID())
-                .orElseThrow(() -> new IllegalArgumentException("Order not found: ID " + p_order.getOrderID()));
+
+        if (!orderRepository.existsById(p_order.getOrderID())) {
+            throw new IllegalArgumentException("Order not found: ID " + p_order.getOrderID());
+        }
+
+        if (p_order.getOrderContent() != null) {
+            for (Furniture f : p_order.getOrderContent()) {
+                f.setOrder(p_order);
+            }
+            p_order.calculateAssemblyTime();
+        }
+
         return orderRepository.save(p_order);
     }
 }

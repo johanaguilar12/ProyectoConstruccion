@@ -1,4 +1,5 @@
 Proyect\Authentication\AuthenticationService.class
+Proyect\Controllers\SpaController.class
 Proyect\Logistics\GeoDataProvider.class
 Proyect\Repositories\PackingListRepository.class
 Proyect\StoreKeeper\OrdersAdmin.class

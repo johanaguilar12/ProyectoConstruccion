@@ -2,10 +2,12 @@ package Proyect.StoreKeeper;
 
 import Proyect.Inventory.Furniture;
 import Proyect.Logistics.Route;
+import Proyect.Validations.ValidationUtils;
 import jakarta.persistence.*;
-import java.time.LocalDate;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "orders")
@@ -17,17 +19,20 @@ public class Order {
 
     private String destination;
 
+    // Usar LocalDate es mejor para bases de datos modernas
     @Temporal(TemporalType.DATE)
     private LocalDate deliveryDate;
 
-    @Transient
-    private ArrayList<Furniture> orderContent = new ArrayList<>();
+    // --- RELACIÓN BIDIRECCIONAL ---
+    // CascadeType.ALL: Si guardas la orden, se guardan los muebles
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Furniture> orderContent = new ArrayList<>();
 
     private Duration totalAssemblyTime = Duration.ZERO;
 
     @ManyToOne
-    @JoinColumn(name = "route_id", nullable = true) // Ruta asociada
-    private Route route = null;
+    @JoinColumn(name = "route_id", nullable = true)
+    private Route route;
 
     public Order() {}
 
@@ -36,54 +41,49 @@ public class Order {
         setDeliveryDate(p_deliveryDate);
     }
 
-    public int getOrderID() {
-        return orderID;
+    // --- LÓGICA DE VINCULACIÓN ---
+    public void setOrderContent(List<Furniture> p_orderContent) {
+        this.orderContent = p_orderContent;
+        // Al asignar muebles, les decimos "Yo soy tu orden"
+        if (this.orderContent != null) {
+            for (Furniture f : this.orderContent) {
+                f.setOrder(this);
+            }
+            calculateAssemblyTime();
+        }
     }
 
-    public void setOrderID(int orderID) {
-        this.orderID = orderID;
+    public void calculateAssemblyTime() {
+        long totalMinutes = 0;
+        if (orderContent != null) {
+            for (Furniture furniture : orderContent) {
+                totalMinutes += (long) furniture.getBuildTime() * furniture.getQuantity();
+            }
+        }
+        this.totalAssemblyTime = Duration.ofMinutes(totalMinutes);
     }
 
-    public String getDestination() {
-        return destination;
-    }
+    // Getters y Setters
+    public int getOrderID() { return orderID; }
+    public void setOrderID(int orderID) { this.orderID = orderID; }
 
+    public String getDestination() { return destination; }
     public void setDestination(String destination) {
+        ValidationUtils.validateNonNull(destination, "Destination");
         this.destination = destination;
     }
 
-    public LocalDate getDeliveryDate() {
-        return deliveryDate;
-    }
-
+    public LocalDate getDeliveryDate() { return deliveryDate; }
     public void setDeliveryDate(LocalDate deliveryDate) {
+        ValidationUtils.validateNonNull(deliveryDate, "Delivery Date");
         this.deliveryDate = deliveryDate;
     }
 
-    public Duration getTotalAssemblyTime() {
-        return totalAssemblyTime;
-    }
+    public List<Furniture> getOrderContent() { return orderContent; }
 
-    public void setTotalAssemblyTime(Duration totalAssemblyTime) {
-        this.totalAssemblyTime = totalAssemblyTime;
-    }
+    public Duration getTotalAssemblyTime() { return totalAssemblyTime; }
+    public void setTotalAssemblyTime(Duration totalAssemblyTime) { this.totalAssemblyTime = totalAssemblyTime; }
 
-    public Route getRoute() {
-        return route;
-    }
-
-    public void setRoute(Route route) {
-        this.route = route;
-    }
-
-    @Override
-    public String toString() {
-        return "Order{" +
-                "orderID=" + orderID +
-                ", destination='" + destination + '\'' +
-                ", deliveryDate=" + deliveryDate +
-                ", totalAssemblyTime=" + totalAssemblyTime +
-                ", route=" + (route != null ? route.getRouteId() : "No route assigned") +
-                '}';
-    }
+    public Route getRoute() { return route; }
+    public void setRoute(Route route) { this.route = route; }
 }
