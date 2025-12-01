@@ -1,0 +1,70 @@
+##############################
+# GENERAL
+##############################
+*.log
+*.tmp
+*.swp
+*.DS_Store
+
+##############################
+# MAVEN / SPRING BOOT
+##############################
+target/
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# Compiled class files
+*.class
+
+# JAR/WAR files
+*.jar
+*.war
+*.ear
+
+##############################
+# NODE / REACT (frontend/)
+##############################
+frontend/node_modules/
+frontend/dist/
+frontend/.npm/
+frontend/.cache/
+frontend/.parcel-cache/
+frontend/.temp/
+
+##############################
+# ENV FILES
+##############################
+.env
+.env.*
+!.env.example
+
+##############################
+# IDEs / EDITORS
+##############################
+
+# IntelliJ IDEA
+.idea/
+*.iml
+out/
+
+# VSCode
+.vscode/
+.history/
+
+# Eclipse
+.project
+.classpath
+.settings/
+bin/
+
+##############################
+# OPERATING SYSTEM
+##############################
+Thumbs.db
+desktop.ini
+ehthumbs.db
