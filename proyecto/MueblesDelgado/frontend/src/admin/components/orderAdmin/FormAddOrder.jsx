@@ -2,12 +2,19 @@ import { useEffect, useState } from "react";
 import { useForm, useOrdersStore } from "../../../hooks";
 import { showErrorAlert, showSuccess } from "../helpers";
 
+const formInitialState = {
+    destination: '',
+    deliveryDate: '',
+};
+
+const formValidations = {
+    destination: [(value) => value.trim() !== '', 'El destino es obligatorio'],
+    deliveryDate: [(value) => value.trim() !== '', 'La fecha es obligatoria']
+};
+
 export const FormAddOrder = () => {
     
-    // Traemos las órdenes del store para mostrarlas en el select
-    const { startCreateOrder, startUpdateOrder, orders } = useOrdersStore();
-    
-    // Estado para controlar si estamos en modo edición o creación
+    const { startUpdateOrder, orders } = useOrdersStore(); 
     const [selectedOrderID, setSelectedOrderID] = useState(""); 
 
     const { 
@@ -17,18 +24,11 @@ export const FormAddOrder = () => {
         isFormValid, 
         onResetForm,
         setFormState
-    } = useForm({
-        destination: '',
-        deliveryDate: '',
-    }, {
-        destination: [(value) => value.trim() !== '', 'El destino es obligatorio'],
-        deliveryDate: [(value) => value.trim() !== '', 'La fecha es obligatoria']
-    });
+    } = useForm(formInitialState, formValidations);
 
-    // EFECTO: Cuando cambias la selección en el dropdown
+    
     useEffect(() => {
         if (selectedOrderID) {
-            // Buscar la orden seleccionada en la lista
             const orderToEdit = orders.find(o => o.orderID === parseInt(selectedOrderID));
             if (orderToEdit) {
                 setFormState({
@@ -37,44 +37,38 @@ export const FormAddOrder = () => {
                 });
             }
         } else {
-            // Si seleccionas "Nueva Orden", limpiamos
             onResetForm();
         }
-    }, [selectedOrderID, orders]);
+        
+    }, [selectedOrderID]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!isFormValid) return showErrorAlert("Complete los campos obligatorios");
 
         try {
-            if (selectedOrderID) {
-                // ACTUALIZAR (Mantiene ID, solo cambia datos)
-                await startUpdateOrder(selectedOrderID, { destination, deliveryDate });
-                showSuccess(`Orden #${selectedOrderID} actualizada correctamente`);
-                // Opcional: Limpiar selección tras guardar
-                setSelectedOrderID(""); 
-                onResetForm();
-            } else {
-                // CREAR NUEVA
-                await startCreateOrder({ destination, deliveryDate });
-                showSuccess("Nueva orden creada correctamente");
-                onResetForm();
+            if (!selectedOrderID) {
+                return showErrorAlert("Debe seleccionar una orden para actualizar");
             }
+
+            await startUpdateOrder(selectedOrderID, { destination, deliveryDate });
+            showSuccess(`Orden #${selectedOrderID} actualizada`);
+
         } catch (error) {
             showErrorAlert(error.message);
         }
     };
     
     return (
-        <div className={`p-6 rounded-lg shadow-md mb-6 border ${selectedOrderID ? 'bg-yellow-50 border-yellow-300' : 'bg-white border-gray-200'}`}>
+        <div className={`p-6 rounded-lg shadow-md mb-6 border bg-yellow-50 border-yellow-300`}>
             <h3 className="text-xl font-bold text-customBlue mb-4">
-                {selectedOrderID ? `Actualizando Orden #${selectedOrderID}` : "Registrar / Completar Orden"}
+                {selectedOrderID ? `Actualizando Orden #${selectedOrderID}` : "Selecciona una Orden"}
             </h3>
             
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <form className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end" onSubmit={handleSubmit}>
                 
-                {/* SELECTOR DE ORDEN (La clave para editar desde arriba) */}
+                {/* Selector de Orden */}
                 <div className="md:col-span-1">
                     <label className="block text-sm font-bold mb-1 text-gray-700">Seleccionar Orden</label>
                     <select
@@ -82,18 +76,19 @@ export const FormAddOrder = () => {
                         onChange={(e) => setSelectedOrderID(e.target.value)}
                         className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:border-blue-500 font-semibold"
                     >
-                        <option value="">+ Crear Nueva Orden</option>
+                        <option value="">-- Seleccionar Orden --</option>
+
                         <optgroup label="Órdenes Existentes">
                             {orders.map(order => (
                                 <option key={order.orderID} value={order.orderID}>
-                                    #{order.orderID} - {order.destination}
+                                    #{order.orderID} - {order.destination || "Sin destino"}
                                 </option>
                             ))}
                         </optgroup>
                     </select>
                 </div>
 
-                {/* Input Destino */}
+                {/* Destino */}
                 <div className="md:col-span-1">
                     <label className="block text-sm font-bold mb-1 text-gray-700">Destino</label>
                     <input 
@@ -101,12 +96,12 @@ export const FormAddOrder = () => {
                         name="destination"
                         value={destination}
                         onChange={onInputChange}
-                        className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:border-blue-500"
-                        placeholder="Ej: Sucursal Centro"
+                        disabled={!selectedOrderID}
+                        className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:border-blue-500 disabled:bg-gray-100"
                     />
                 </div>
 
-                {/* Input Fecha */}
+                {/* Fecha */}
                 <div className="md:col-span-1">
                     <label className="block text-sm font-bold mb-1 text-gray-700">Fecha de Entrega</label>
                     <input 
@@ -114,17 +109,19 @@ export const FormAddOrder = () => {
                         name="deliveryDate"
                         value={deliveryDate}
                         onChange={onInputChange}
-                        className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:border-blue-500"
+                        disabled={!selectedOrderID}
+                        className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:border-blue-500 disabled:bg-gray-100"
                     />
                 </div>
 
-                {/* Botón Acción */}
+                {/* Botón */}
                 <div className="md:col-span-1">
                     <button 
                         type="submit"
-                        className={`w-full py-2 px-4 rounded text-white font-bold transition-colors ${selectedOrderID ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green-600 hover:bg-green-700'}`}
+                        disabled={!selectedOrderID}
+                        className={`w-full py-2 px-4 rounded text-white font-bold transition-colors bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 disabled:cursor-not-allowed`}
                     >
-                        {selectedOrderID ? "Actualizar" : "Crear"}
+                        Actualizar
                     </button>
                 </div>
             </form>
