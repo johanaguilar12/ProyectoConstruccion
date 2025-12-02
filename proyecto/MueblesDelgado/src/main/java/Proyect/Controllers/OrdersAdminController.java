@@ -43,9 +43,10 @@ public class OrdersAdminController {
         return new ResponseEntity<>(order, HttpStatus.OK);
     }
 
-    @PutMapping("/{p_orderId}")
-    public ResponseEntity<Order> updateOrder(@PathVariable int p_orderId, @RequestBody Order p_order) {
-        p_order.setOrderID(p_orderId);
+    @PutMapping("/{id}")
+    public ResponseEntity<Order> updateOrder(@PathVariable("id") int id, @RequestBody Order p_order) {
+        p_order.setOrderID(id); 
+        
         Order updatedOrder = ordersAdminService.updateOrder(p_order);
         return new ResponseEntity<>(updatedOrder, HttpStatus.OK);
     }

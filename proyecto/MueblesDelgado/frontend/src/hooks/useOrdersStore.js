@@ -4,11 +4,10 @@ import { onSetOrders, onSetPackingListOrderID, onDeleteOrder } from "../store";
 import { useAdmin } from "./useAdmin";
 import Swal from "sweetalert2";
 
-
 export const useOrdersStore = () => {
     const { orders, packingListOrderID } = useSelector((state) => state.orders);
     const dispatch = useDispatch();
-    const {startCommand,finishedCommand} = useAdmin();
+    const { startCommand, finishedCommand } = useAdmin();
 
     const startGetOrders = async () => {
         try {
@@ -17,7 +16,7 @@ export const useOrdersStore = () => {
         } catch (error) {
             const message = error.response?.data?.message || "Error al obtener los pedidos";
             console.error("startGetOrders Error:", message);
-            throw new Error(message);
+            console.log(message);
         }
     };
 
@@ -25,9 +24,10 @@ export const useOrdersStore = () => {
         try {
             startCommand();
             const { data } = await mueblesDelgadoApi.post("/orders", order);
-            console.log("Pedido creado exitosamente:", data.order);
+            console.log("Pedido creado exitosamente:", data);
 
-            startGetOrders();
+            // Recargar la lista para ver el nuevo pedido
+            await startGetOrders();
             finishedCommand();
         } catch (error) {
             finishedCommand();
@@ -75,7 +75,6 @@ export const useOrdersStore = () => {
             Swal.fire('Error', message, 'error');
         }
     };
-
 
     const startSetOrders = async (ordersList) => {
         try {

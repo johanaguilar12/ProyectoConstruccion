@@ -66,17 +66,16 @@ public class OrdersAdmin {
     public Order updateOrder(Order p_order) {
         ValidationUtils.validateNonNull(p_order, "Order");
 
-        if (!orderRepository.existsById(p_order.getOrderID())) {
-            throw new IllegalArgumentException("Order not found: ID " + p_order.getOrderID());
+        Order existingOrder = orderRepository.findById(p_order.getOrderID())
+                .orElseThrow(() -> new IllegalArgumentException("Orden no encontrada ID: " + p_order.getOrderID()));
+
+        if (p_order.getDestination() != null) {
+            existingOrder.setDestination(p_order.getDestination());
+        }
+        if (p_order.getDeliveryDate() != null) {
+            existingOrder.setDeliveryDate(p_order.getDeliveryDate());
         }
 
-        if (p_order.getOrderContent() != null) {
-            for (Furniture f : p_order.getOrderContent()) {
-                f.setOrder(p_order);
-            }
-            p_order.calculateAssemblyTime();
-        }
-
-        return orderRepository.save(p_order);
+        return orderRepository.save(existingOrder);
     }
 }

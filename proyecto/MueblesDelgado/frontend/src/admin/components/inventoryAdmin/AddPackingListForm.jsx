@@ -13,7 +13,8 @@ const formValidationsPackingList = {
   arrivalDate: [(value) => value.trim() !== '', 'La fecha es obligatoria'],
 };
 
-export const AddPackingListForm = () => {
+// Recibimos ordersList
+export const AddPackingListForm = ({ ordersList = [] }) => {
   const [furnitureList, setFurnitureList] = useState([]);
   const [ordersID, setOrdersID] = useState([]);
   const [isFurnitureFormOpen, setIsFurnitureFormOpen] = useState(false);
@@ -56,14 +57,11 @@ export const AddPackingListForm = () => {
     }
 
     try {
-
       const newPackingList = {
         folio,
         products: furnitureList,
         arrivalDate,
       }
-
-      // console.log(furnitureList);
 
       await startAddPackingList(newPackingList);
 
@@ -76,7 +74,6 @@ export const AddPackingListForm = () => {
     } catch (error) {
       showErrorAlert(error.message);
     }
-
   };
 
   return (
@@ -85,97 +82,49 @@ export const AddPackingListForm = () => {
         Agregar PackingList
       </h2>
       <form onSubmit={onSubmitFormPackingList}>
-        {/* Folio */}
         <div className="mb-4">
-          <label
-            htmlFor="folio"
-            className="block text-baseclr font-semibold mb-2"
-          >
-            Folio
-          </label>
-          <input
-            type="text"
-            name="folio"
-            id="folio"
-            value={folio}
-            onChange={onInputChange}
-            className="w-full px-4 py-2 border border-lineclr rounded-lg focus:outline-none focus:ring-2 focus:ring-customBlueLight"
-          />
+          <label className="block text-baseclr font-semibold mb-2">Folio</label>
+          <input type="text" name="folio" id="folio" value={folio} onChange={onInputChange} className="w-full px-4 py-2 border border-lineclr rounded-lg" />
         </div>
 
-        {/* Arrival Date */}
         <div className="mb-4">
-          <label
-            htmlFor="arrivalDate"
-            className="block text-baseclr font-semibold mb-2"
-          >
-            Fecha de LLegada
-          </label>
-          <input
-            type="date"
-            name="arrivalDate"
-            id="arrivalDate"
-            value={arrivalDate}
-            onChange={onInputChange}
-            className="w-full px-4 py-2 border border-lineclr rounded-lg focus:outline-none focus:ring-2 focus:ring-customBlueLight"
-          />
+          <label className="block text-baseclr font-semibold mb-2">Fecha de LLegada</label>
+          <input type="date" name="arrivalDate" id="arrivalDate" value={arrivalDate} onChange={onInputChange} className="w-full px-4 py-2 border border-lineclr rounded-lg" />
         </div>
 
-        {/* Furniture List */}
         <div className="mb-4">
           <h3 className="font-semibold mb-2">Muebles</h3>
-          <button
-            type="button"
-            onClick={() => setIsFurnitureFormOpen(true)}
-            className="mb-2 bg-btnyellow text-white font-bold py-1 px-3 rounded-lg hover:bg-yellow-600"
-          >
+          <button type="button" onClick={() => setIsFurnitureFormOpen(true)} className="mb-2 bg-btnyellow text-white font-bold py-1 px-3 rounded-lg hover:bg-yellow-600">
             Agregar Mueble
           </button>
           <ul className="list-disc pl-5">
             {furnitureList.map((furniture, index) => (
               <li key={index} className="flex justify-between items-center border my-3">
                 <div>
-                    <span>{`ID: ${furniture.furnitureId}`}</span>
-                    <br />
-                    <span>{`ID order: ${furniture.orderID}`}</span>
-                    <br />
+                    <span>{`ID: ${furniture.furnitureId}`}</span><br/>
+                    <span>{`ID Order: ${furniture.orderID}`}</span><br/>
                     <span>{`Tipo: ${furniture.type}`}</span>
-                    <br />
-                    <span>{`Marca: ${furniture.brand}`}</span>
-                    <br />
-                    <span>{`Color: ${furniture.color}`}</span>
-                    <br />
-                    <span>{`Dimensión: largo: ${furniture.dimension.length} x alto: ${furniture.dimension.height} x ancho: ${furniture.dimension.width}`}</span>
-                    <br />
-                    <span>{`Cantidad: ${furniture.quantity}`}</span>
-                    <br />
-                    <span>{`Tiempo de Montaje: ${furniture.buildTime} minutos`}</span>
-                    <br />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveFurniture(index)}
-                  className="text-red-500 font-bold"
-                >
-                  Eliminar
-                </button>
+                <button type="button" onClick={() => handleRemoveFurniture(index)} className="text-red-500 font-bold">Eliminar</button>
               </li>
             ))}
           </ul>
         </div>
 
-        {/* Submit Button */}
-        <button
-          type="submit"
-          className="w-full bg-btnyellow text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500"
-        >
+        <button type="submit" className="w-full bg-btnyellow text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-600">
           Registrar PackingList
         </button>
       </form>
 
-      {/* Overlay for Furniture Form */}
       {isFurnitureFormOpen && (
-        <FormAddForniture handleAddFurniture={handleAddFurniture} setIsFurnitureFormOpen={setIsFurnitureFormOpen} ordersID={ordersID} setOrdersID={setOrdersID}/>
+        <FormAddForniture 
+            handleAddFurniture={handleAddFurniture} 
+            setIsFurnitureFormOpen={setIsFurnitureFormOpen} 
+            // PASO 2: Pasamos la lista 'ordersList' como 'ordersAvailable'
+            ordersAvailable={ordersList} 
+            ordersID={ordersID} 
+            setOrdersID={setOrdersID}
+        />
       )}
     </div>
   );

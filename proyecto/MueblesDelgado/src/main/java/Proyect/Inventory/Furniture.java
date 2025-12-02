@@ -22,14 +22,11 @@ public class Furniture {
     private int quantity;
     private int buildTime;
 
-    // --- RELACIÓN CON LA ORDEN ---
     @ManyToOne
-    @JoinColumn(name = "order_id") // Esto crea la columna real en la BD
-    @JsonIgnore // Evita bucles infinitos al convertir a JSON
+    @JoinColumn(name = "order_id")
+    @JsonIgnore
     private Order order;
 
-    // --- CAMPO TEMPORAL ---
-    // Esto sirve para recibir el "orderID" simple que manda el Frontend
     @Transient
     private Integer tempOrderID;
 
@@ -45,31 +42,20 @@ public class Furniture {
         setBuildTime(p_buildTime);
     }
 
-    // --- MÉTODOS PARA MANEJAR EL ID DEL JSON ---
-
-    // Jackson usa esto cuando recibe el JSON {"orderID": 5}
-    public void setOrderID(int id) {
+    public void setOrderID(Integer id) { 
         this.tempOrderID = id;
     }
 
-    // Jackson usa esto para enviar el JSON al frontend
-    public int getOrderID() {
+    public Integer getOrderID() {
         if (order != null) {
             return order.getOrderID();
         }
         return (tempOrderID != null) ? tempOrderID : 0;
     }
 
-    // Método para uso interno en el servicio
-    public Integer getTempOrderID() {
-        return tempOrderID;
-    }
-
-    // Getters y Setters de la relación real
+    public Integer getTempOrderID() { return tempOrderID; }
     public Order getOrder() { return order; }
     public void setOrder(Order order) { this.order = order; }
-
-    // --- RESTO DE GETTERS Y SETTERS ---
     public int getFurnitureId() { return furnitureId; }
     public void setFurnitureId(int furnitureId) { this.furnitureId = furnitureId; }
     public String getType() { return type; }
