@@ -4,17 +4,19 @@ export const trucksSlice = createSlice({
     name: 'trucks',
     initialState: {
         trucks: [],
-        orderTruckAssignments: [],
+        orderTruckAssignments: [], // Asegúrate de que esto exista
     },
     reducers: {
         onSetTrucks: (state, { payload } ) => {
-            state.trucks = payload;
+            // Blindaje contra nulls
+            state.trucks = Array.isArray(payload) ? payload : [];
         },
         onSetOrderTruckAssignments: (state, { payload } ) => {
-            state.orderTruckAssignments = payload;
+            // Blindaje contra nulls
+            state.orderTruckAssignments = Array.isArray(payload) ? payload : [];
         },
     }
 });
 
-// Action creators are generated for each case reducer function
+// IMPORTANTE: Exportar ambas acciones aquí
 export const { onSetTrucks, onSetOrderTruckAssignments } = trucksSlice.actions;

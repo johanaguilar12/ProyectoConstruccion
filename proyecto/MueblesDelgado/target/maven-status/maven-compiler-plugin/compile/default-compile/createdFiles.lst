@@ -28,6 +28,7 @@ Proyect\StoreKeeper\Order.class
 Proyect\StoreKeeper\Platform.class
 Proyect\Logistics\DeliveryTruckAdmin.class
 Proyect\Repositories\TruckDriverRepository.class
+Proyect\Repositories\RouteRepository.class
 Proyect\StoreKeeper\StoreKeeper.class
 Proyect\MueblesDelgadoApplication.class
 Proyect\Container\ContainerList.class

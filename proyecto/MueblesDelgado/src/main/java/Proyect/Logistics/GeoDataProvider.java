@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class GeoDataProvider {
-    private static final String API_KEY = "AIzaSyAprtokl7TAwkM6QkbCT25sBlRt-LkweuU";
+    private static final String API_KEY = "AIzaSyA2hbYzjR8a_Rbnwi4R-02Lo7ZM38yH7qI";
 
     // Método principal para obtener las coordenadas a partir de la dirección
     public double[] getCoordinatesFromAddress(String p_address) throws Exception {

@@ -3,12 +3,12 @@ package Proyect.Logistics;
 import Proyect.Repositories.DeliveryTruckRepository;
 import Proyect.Repositories.OrderTruckAssignmentRepository;
 import Proyect.Repositories.OrderRepository;
+import Proyect.Repositories.RouteRepository;
 import Proyect.StoreKeeper.Order;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -23,6 +23,9 @@ public class LogisticsAdminService {
     @Autowired
     private OrderRepository orderRepository;
     
+    @Autowired
+    private RouteRepository routeRepository;
+    
     private final RoutePlanner routePlanner;
 
     @Autowired
@@ -30,83 +33,87 @@ public class LogisticsAdminService {
         this.routePlanner = routePlanner;
     }
 
-    // Guardar una lista de camiones disponibles
-    public void setTrucksAvailable(List<DeliveryTruck> trucksAvailable) {
-        deliveryTruckRepository.saveAll(trucksAvailable);
-    }
-
-    // Obtener todos los camiones disponibles
     public List<DeliveryTruck> getAvailableTrucks() {
         return deliveryTruckRepository.findAll();
     }
 
-    // Obtener todas las asignaciones de pedidos a camiones
+    public List<Route> getAllRoutes() {
+        return routeRepository.findAll();
+    }
+
     public List<OrderTruckAssignment> getOrderTruckAssignments() {
         return orderTruckAssignmentRepository.findAll();
     }
 
-    // Método solo para planificar rutas, no asigna nada
-    public List<Route> planRoutesForOrders(List<Order> orders) throws Exception {
-        List<DeliveryTruck> trucksAvailable = getAvailableTrucks();
-
-        // Verificar que haya camiones disponibles
-        if (trucksAvailable.isEmpty()) {
-            throw new IllegalArgumentException("No trucks available for assignment");
+    // --- 1. NUEVO MÉTODO PRINCIPAL (Generación por Selección) ---
+    @Transactional
+    public void generateCustomRoutes(List<Integer> orderIds) throws Exception {
+        // A. Obtener órdenes seleccionadas
+        List<Order> selectedOrders = orderRepository.findAllById(orderIds);
+        
+        if (selectedOrders.isEmpty()) {
+            throw new IllegalArgumentException("No se encontraron órdenes con los IDs proporcionados.");
         }
 
-        // Planificar las rutas usando RoutePlanner y devolverlas
-        return routePlanner.planOptimalRoutes(orders, trucksAvailable.size());
+        // B. Validar que no tengan ruta ya asignada
+        for (Order o : selectedOrders) {
+            if (o.getRoute() != null) {
+                throw new IllegalStateException("La orden " + o.getOrderID() + " ya tiene una ruta asignada.");
+            }
+        }
+
+        // C. Obtener camiones
+        List<DeliveryTruck> trucks = getAvailableTrucks();
+        if (trucks.isEmpty()) throw new RuntimeException("No hay camiones disponibles.");
+
+        // D. Calcular Rutas (El Planner las crea en memoria)
+        List<Route> generatedRoutes = routePlanner.planOptimalRoutes(selectedOrders, trucks.size());
+
+        if (generatedRoutes.isEmpty()) {
+             throw new RuntimeException("No se pudieron generar rutas válidas (verifique direcciones o capacidades).");
+        }
+
+        // E. Guardar todo en la BD
+        saveAndAssignRoutes(generatedRoutes, trucks);
     }
 
-    // Método para asignar rutas a los camiones y asignar la ruta a las órdenes
+    // --- 2. MÉTODOS DE COMPATIBILIDAD (Para que no falle el Controlador) ---
+
+    public List<Route> planRoutes(List<Order> orders) throws Exception {
+        List<DeliveryTruck> trucks = getAvailableTrucks();
+        if (trucks.isEmpty()) throw new IllegalArgumentException("No hay camiones disponibles");
+        return routePlanner.planOptimalRoutes(orders, trucks.size());
+    }
+
     @Transactional
     public void assignRoutesToTrucks(List<Route> plannedRoutes, List<Order> orders) {
-        List<DeliveryTruck> trucksAvailable = getAvailableTrucks();
+        List<DeliveryTruck> trucks = getAvailableTrucks();
+        if (trucks.isEmpty()) throw new RuntimeException("No hay camiones disponibles");
+        saveAndAssignRoutes(plannedRoutes, trucks);
+    }
+
+    // --- 3. MÉTODO PRIVADO DE GUARDADO ---
+    private void saveAndAssignRoutes(List<Route> routesToSave, List<DeliveryTruck> trucks) {
         int truckIndex = 0;
+        for (Route route : routesToSave) {
+            // Guardar la Ruta para tener ID
+            routeRepository.save(route);
 
-        for (Route route : plannedRoutes) {
-            if (truckIndex >= trucksAvailable.size()) {
-                truckIndex = 0;
-            }
-
-            DeliveryTruck selectedTruck = trucksAvailable.get(truckIndex);
-
-            // Crear la asignación entre el camión y la ruta
-            createAssignment(selectedTruck, route);
-
-            // Aquí asignamos la ruta a las órdenes correspondientes
-            assignRouteToOrders(orders, route);
-
+            // Asignar camión (Round Robin)
+            DeliveryTruck truck = trucks.get(truckIndex % trucks.size());
             truckIndex++;
-        }
-    }
 
-    // Método para asignar la ruta a las órdenes
-    private void assignRouteToOrders(List<Order> orders, Route route) {
-        for (Order order : orders) {
-            if (order.getDeliveryDate().isBefore(LocalDate.now())) {
-                // Si la fecha de entrega del pedido es antes de hoy, asigna la ruta
-                order.setRoute(route);
-                // Guardamos la orden actualizada en el repositorio de órdenes
-                orderRepository.save(order);
+            // Crear relación Camión-Ruta
+            OrderTruckAssignment assignment = new OrderTruckAssignment(truck, route);
+            orderTruckAssignmentRepository.save(assignment);
+
+            // Actualizar las órdenes con la nueva ruta
+            if (route.getOrders() != null) {
+                for (Order order : route.getOrders()) {
+                    order.setRoute(route);
+                    orderRepository.save(order);
+                }
             }
         }
-    }
-
-    // Método para crear y guardar la asignación entre camión y ruta
-    private void createAssignment(DeliveryTruck truck, Route route) {
-        OrderTruckAssignment assignment = new OrderTruckAssignment(truck, route);
-        orderTruckAssignmentRepository.save(assignment);
-    }
-
-    // Método Orquestador para planificar rutas
-    public List<Route> planRoutes(List<Order> orders) throws Exception {
-        return planRoutesForOrders(orders);  // Solo planifica rutas
-    }
-
-    // Método Orquestador para asignar rutas a camiones y a órdenes
-    @Transactional // Aquí también se agrega la transacción
-    public void assignRoutes(List<Route> plannedRoutes, List<Order> orders) {
-        assignRoutesToTrucks(plannedRoutes, orders);  // Asigna rutas a camiones y a órdenes
     }
 }

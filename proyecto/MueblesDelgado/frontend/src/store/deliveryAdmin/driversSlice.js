@@ -8,13 +8,14 @@ export const driversSlice = createSlice({
     },
     reducers: {
         onSetDrivers: (state, { payload } ) => {
-            state.drivers = payload;
+            // BLINDAJE
+            state.drivers = Array.isArray(payload) ? payload : [];
         },
         onSetAssignments : (state, { payload } ) => {
-            state.assignments = payload;
+            // BLINDAJE
+            state.assignments = Array.isArray(payload) ? payload : [];
         },
     }
 });
 
-// Action creators are generated for each case reducer function
 export const { onSetDrivers, onSetAssignments } = driversSlice.actions;
