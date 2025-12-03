@@ -9,6 +9,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @Table(name = "orders")
 public class Order {
@@ -32,6 +34,7 @@ public class Order {
 
     @ManyToOne
     @JoinColumn(name = "route_id", nullable = true)
+    @JsonIgnore
     private Route route;
 
     public Order() {}

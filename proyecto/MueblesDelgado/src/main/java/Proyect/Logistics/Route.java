@@ -4,6 +4,7 @@ import Proyect.StoreKeeper.Order;
 import jakarta.persistence.*;
 import java.time.Duration;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -24,8 +25,8 @@ public class Route {
     private float distance;  // Distancia total recorrida
     private LocalTime estimatedTime;  // Tiempo estimado para completar la ruta
 
-    @OneToMany(mappedBy = "route", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Order> orders; // Relación con pedidos
+    @OneToMany(mappedBy = "route", cascade = CascadeType.ALL, orphanRemoval = false)
+    private List<Order> orders = new ArrayList<>();
 
     public Route() {}
 
@@ -36,6 +37,7 @@ public class Route {
         setTravelTimes(p_travelTimes);
         setDistance(p_distance);
         setEstimatedTime(p_estimatedTime);
+        this.orders = new ArrayList<>();
     }
 
     // Getters y setters
@@ -93,8 +95,11 @@ public class Route {
 
     // Método para agregar pedidos
     public void addOrder(Order order) {
+        if (this.orders == null) {
+            this.orders = new ArrayList<>(); // Protección extra
+        }
         this.orders.add(order);
-        order.setRoute(this); // Establecer la relación inversa
+        order.setRoute(this);
     }
 
     @Override

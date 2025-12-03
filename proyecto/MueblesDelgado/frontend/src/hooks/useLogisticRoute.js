@@ -1,12 +1,14 @@
 import { useDispatch, useSelector } from "react-redux"
 import mueblesDelgadoApi from "../api/mueblesDelgadoApi";
-import { onSetRoutes } from "../store"; // Asegúrate de tener esta acción en tu slice
+import { onSetRoutes } from "../store"; 
 import { useAdmin } from "./useAdmin";
 import Swal from "sweetalert2";
 
 export const useLogisticRoute = () => {
-    // Obtenemos las rutas del estado
-    const { routes } = useSelector((state) => state.orders); // O state.routes, depende de tu store
+    // Ensure this matches your store structure. 
+    // If 'routes' is inside the 'orders' slice:
+    const { routes } = useSelector((state) => state.orders); 
+    
     const { startCommand, finishedCommand } = useAdmin();
     const dispatch = useDispatch();
 
@@ -15,33 +17,32 @@ export const useLogisticRoute = () => {
             startCommand();
             await mueblesDelgadoApi.post("/logistics/generate-custom-routes", selectedOrderIds);
             
-            // ¡AQUÍ ESTÁ LA CLAVE! Recargar las rutas después de generar
+            // Reload routes immediately
             await startLoadRoutes(); 
             
             finishedCommand();
-            Swal.fire('Éxito', 'Rutas generadas correctamente', 'success');
+            Swal.fire('Success', 'Routes generated successfully', 'success');
         } catch (error) {
             finishedCommand();
             console.error(error);
-            const msg = error.response?.data?.message || "Error al generar rutas";
+            const msg = error.response?.data?.message || "Error generating routes";
             Swal.fire('Error', msg, 'error');
         }
     }
 
-    // NUEVA FUNCIÓN: Cargar rutas desde la BD
     const startLoadRoutes = async () => {
          try {
             const { data } = await mueblesDelgadoApi.get("/logistics/routes");
-            // Guardamos en Redux para que la tabla lo vea
-            dispatch(onSetRoutes(data));
+            // Ensure data is an array before dispatching
+            dispatch(onSetRoutes(Array.isArray(data) ? data : []));
          } catch (error) {
-             console.error("Error cargando rutas:", error);
+             console.error("Error loading routes:", error);
          }
     }
 
     return {
-        routes, // Exportamos la variable para la tabla
+        routes, 
         startGenerateCustomRoutes,
-        startLoadRoutes // Exportamos la función
+        startLoadRoutes 
     }
 }
