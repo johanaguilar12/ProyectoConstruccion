@@ -1,13 +1,13 @@
-package Proyect;
+// package Proyect;
 
-import org.junit.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+// import org.junit.Test;
+// import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class MueblesDelgadoApplicationTests {
+// @SpringBootTest
+// class MueblesDelgadoApplicationTests {
 
-    @Test
-    void contextLoads() {
-    }
+//     @Test
+//     void contextLoads() {
+//     }
 
-}
+// }

@@ -2,9 +2,7 @@ package Proyect.Authentication;
 
 import Proyect.Repositories.AdministratorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import java.util.Optional;
 
 @Service
@@ -13,32 +11,32 @@ public class AuthenticationService {
     @Autowired
     private AdministratorRepository administratorRepository;
 
-//    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-
-    public String authenticate(String name, String password) {
+    // Cambiamos el tipo de retorno de String a Administrator
+    public Administrator authenticate(String name, String password) {
         Administrator admin = administratorRepository.findByName(name)
-                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-//        if (!passwordEncoder.matches(password, admin.getPassword())) {
-//            throw new RuntimeException("Invalid credentials");
-//        }
+        // Si usas BCrypt, cámbialo aquí. Por ahora texto plano como lo tenías.
+        if (!admin.getPassword().equals(password)) {
+            throw new RuntimeException("Credenciales incorrectas");
+        }
 
-        return JwtUtil.generateToken(admin.getName());
+        return admin; // Devolvemos el objeto completo
     }
 
     public Administrator validateToken(String token) {
         if (!JwtUtil.validateToken(token)) {
             throw new RuntimeException("Token inválido");
         }
-
         String name = JwtUtil.getSubjectFromToken(token);
         return administratorRepository.findByName(name)
                 .orElseThrow(() -> new RuntimeException("Administrador no encontrado"));
     }
 
+    // Este método ya no es tan necesario si la lógica la mueve el controlador, 
+    // pero lo dejamos por si acaso.
     public String renewToken(String token) {
         Administrator admin = validateToken(token);
-
         return JwtUtil.generateToken(admin.getName());
     }
 
@@ -46,10 +44,7 @@ public class AuthenticationService {
         if (administratorRepository.existsByName(newAdmin.getName())) {
             throw new RuntimeException("El administrador ya existe");
         }
-
-//        newAdmin.setPassword(passwordEncoder.encode(newAdmin.getPassword()));
-        newAdmin.setPassword(newAdmin.getPassword());
-
+        // newAdmin.setPassword(passwordEncoder.encode(newAdmin.getPassword())); // Si usaras encoder
         return administratorRepository.save(newAdmin);
     }
 
@@ -58,12 +53,9 @@ public class AuthenticationService {
     }
 
     public void deleteAdministrator(Long id) {
-        Optional<Administrator> admin = administratorRepository.findById(id);
-
-        if (admin.isEmpty()) {
+        if (!administratorRepository.existsById(id)) {
             throw new RuntimeException("Administrador no encontrado");
         }
-
         administratorRepository.deleteById(id);
     }
 }

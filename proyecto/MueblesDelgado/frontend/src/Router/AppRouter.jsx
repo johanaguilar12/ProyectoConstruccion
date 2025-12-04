@@ -1,33 +1,45 @@
-import { useEffect } from "react";
-import { RouterProvider } from "react-router-dom";
-import { getRoutes } from "./Routes";
-import { useAuthStore } from "../hooks";
-import { LoadingElement } from "../helpers/LoadingElement";
+import { useEffect } from 'react';
+import { Navigate, Route, Routes } from 'react-router-dom';
 
-
-const router = getRoutes();
+import { AuthRoutes } from '../auth/routes/AuthRoutes';
+import { AdminRoutes } from '../admin/routes/AdminRoutes';
+import { useAuthStore } from '../hooks/useAuthStore';
+import { LoadingElement } from '../helpers/LoadingElement';
 
 export const AppRouter = () => {
-  // Aqui van cosas que queremos que se ejecuten una sola vez y esten disponibles en toda la aplicacion o desde el inicio
-  // const { status, checkAuthToken } = useAuthStore();
 
-  // useEffect(() => {
-  //   checkAuthToken();
-  // }, [])
+  const { status, checkAuthToken } = useAuthStore();
 
-  // if (status === "checking") {
-  //   return <LoadingElement />
-  // }
+  useEffect(() => {
+    checkAuthToken();
+  }, []);
 
-  return <RouterProvider router={router} 
-    future={{
-      v7_startTransition: true,
-      v7_relativeSplatPath: true,
-      v7_fetcherPersist: true,
-      v7_normalizeFormMethod: true,
-      v7_partialHydration: true,
-      v7_skipActionErrorRevalidation: true,
-    }}
-  /> ;
+  if ( status === 'checking' ) {
+    return <LoadingElement />
+  }
 
+  return (
+    <Routes>
+        {
+            (status === 'not-authenticated')
+            ? (
+                /* Rutas Públicas */
+                <>
+                    <Route path="/auth/*" element={ <AuthRoutes /> } />
+                    <Route path="/*" element={ <Navigate to="/auth/login" /> } />
+                </>
+            )
+            : (
+                /* Rutas Privadas */
+                <>
+                    {/* 1. Montamos las rutas de admin bajo el prefijo "/admin" */}
+                    <Route path="/admin/*" element={ <AdminRoutes /> } />
+                    
+                    {/* 2. Cualquier otra cosa redirige a /admin/panel */}
+                    <Route path="/*" element={ <Navigate to="/admin/panel" /> } />
+                </>
+            )
+        }
+    </Routes>
+  )
 }

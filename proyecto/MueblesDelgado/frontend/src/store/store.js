@@ -11,4 +11,7 @@ export const store = configureStore({
         inventory: inventorySlice.reducer,
         admin: adminSlice.reducer,
     },
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware({
+        serializableCheck: false
+    })
 });
